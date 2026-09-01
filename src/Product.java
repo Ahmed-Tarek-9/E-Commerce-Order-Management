@@ -1,8 +1,8 @@
 public class Product implements Comparable<Product> {
-    private int id;
-    private String name;
+    private final int id;
+    private final String name;
     private double price;
-    private String category;
+    private final String category;
     private int stockQuantity;
     private static int nextId = 1;
 

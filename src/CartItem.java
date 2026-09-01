@@ -1,5 +1,5 @@
 public class CartItem {
-    private Product product;
+    private final Product product;
     private int quantity;
 
     public CartItem(Product product, int quantity) {

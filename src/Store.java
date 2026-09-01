@@ -1,13 +1,13 @@
 import java.util.*;
 
 public class Store {
-    private List<Product> products;
-    private Map<Integer, Product> productMap;
-    private Map<Integer, Order> orders;
-    private Set<String> categories;
-    private Queue<Order> shippingQueue;
-    private List<Order> deliveredOrders;
-    private List<Review> reviews;
+    private final List<Product> products;
+    private final Map<Integer, Product> productMap;
+    private final Map<Integer, Order> orders;
+    private final Set<String> categories;
+    private final Queue<Order> shippingQueue;
+    private final List<Order> deliveredOrders;
+    private final List<Review> reviews;
 
     public Store() {
         products = new ArrayList<>();
@@ -19,47 +19,72 @@ public class Store {
         reviews = new ArrayList<>();
     }
 
-    public void addProduct(Scanner scanner) {
-        String name = "";
-        do {
-            System.out.println("Enter the product's name: ");
-            name = scanner.nextLine();
-        } while (name.trim().isEmpty());
-
-        double price = 1.0;
-        do {
-            if (price <= 0) {
-                System.out.println("Price must be greater than 0");
-            }
-            System.out.println("Enter the product's price: ");
+    private int readPositiveInt(Scanner scanner, String message) {
+        while (true) {
+            System.out.println(message);
             try {
-                price = Double.parseDouble(scanner.nextLine());
+                int value = Integer.parseInt(scanner.nextLine());
+                if (value > 0) {
+                    return value;
+                }
+                System.out.println("Invalid input. Please enter a positive number.");
             } catch (NumberFormatException e) {
-                price = 0.0;
                 System.out.println("Invalid input. Please enter a number.");
             }
-        } while (price <= 0);
+        }
+    }
 
-        String category = "";
-        do {
-            System.out.println("Enter the product's category");
-            category = scanner.nextLine();
-        } while (category.trim().isEmpty());
+    private int readIntBetweenRange(Scanner scanner, String message, int start, int end) {
+        while (true) {
+            System.out.println(message);
+            try {
+                int value = Integer.parseInt(scanner.nextLine());
+                if (value >= start && value <= end) {
+                    return value;
+                }
+                System.out.println("Invalid input. Please enter a number in the range [" + start + "->" + end + "]");
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+
+    private double readPositiveDouble(Scanner scanner, String message) {
+        while (true) {
+            System.out.println(message);
+            try {
+                double value = Double.parseDouble(scanner.nextLine());
+                if (value > 0) {
+                    return value;
+                }
+                System.out.println("Invalid input. Please enter a positive number.");
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+    }
+
+    private String readNonEmptyString(Scanner scanner, String message) {
+        while(true) {
+            System.out.println(message);
+            String value = scanner.nextLine();
+            if(!value.trim().isEmpty()) {
+                return value;
+            }
+            System.out.println("The string cannot be empty.");
+        }
+    }
+
+    public void addProduct(Scanner scanner) {
+        String name = readNonEmptyString(scanner, "Enter the product's name: ");
+
+        double price = readPositiveDouble(scanner, "Enter the product's price");
+
+        String category = readNonEmptyString(scanner, "Enter the product's category: ");
         String resultCategory = category.substring(0, 1).toUpperCase() + category.substring(1);
 
-        int quantity = 1;
-        do {
-            if (quantity <= 0) {
-                System.out.println("Stock Quantity must be greater than 0");
-            }
-            System.out.println("Enter the product's stock quantity: ");
-            try {
-                quantity = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                quantity = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (quantity <= 0);
+        int quantity = readPositiveInt(scanner, "Enter the product's stock quantity: ");
+
         Product product = new Product(name, price, resultCategory, quantity);
         products.add(product);
         productMap.put(product.getId(), product);
@@ -68,19 +93,7 @@ public class Store {
     }
 
     public void removeProduct(Scanner scanner) {
-        int id = 1;
-        do {
-            if (id <= 0) {
-                System.out.println("Product ID must be greater than 0.");
-            }
-            System.out.println("Enter the product ID: ");
-            try {
-                id = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                id = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (id <= 0);
+        int id = readPositiveInt(scanner, "Enter the product ID: ");
 
         Product product = productMap.get(id);
         if (product == null) {
@@ -89,30 +102,23 @@ public class Store {
             products.remove(product);
             productMap.remove(id);
             System.out.println("Product removed successfully.");
+            boolean categoryStillExists = products.stream().anyMatch(p -> p.getCategory().equals(product.getCategory()));
+            if (!categoryStillExists) {
+                categories.remove(product.getCategory());
+            }
         }
     }
 
     public void displayProducts() {
-        int index = 1;
-        for (Product product : products) {
-            System.out.println(index++ + " " + product);
-        }
+        products.forEach(product -> {
+            System.out.println("----------------------------------------");
+            System.out.println(product);
+            System.out.println("----------------------------------------");
+        });
     }
 
     public void searchProduct(Scanner scanner) {
-        int id = 1;
-        do {
-            if (id <= 0) {
-                System.out.println("Product ID must be greater than 0.");
-            }
-            System.out.println("Enter the product ID: ");
-            try {
-                id = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                id = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (id <= 0);
+        int id = readPositiveInt(scanner, "Enter the product ID: ");
 
         if (!productMap.containsKey(id)) {
             System.out.println("Product not found.");
@@ -124,26 +130,21 @@ public class Store {
 
     public void displayCategories() {
         System.out.println("Categories:");
-        for (String category : categories) {
-            System.out.println("\t- " + category);
-        }
+        categories.forEach(category -> System.out.println("\t- " + category));
     }
 
     public void displayProductsByPrice() {
         ArrayList<Product> sortedProducts = new ArrayList<>(products);
         sortedProducts.sort(null);
-        int index = 1;
-        for (Product product : sortedProducts) {
-            System.out.println(index++ + " " + product);
-        }
+        sortedProducts.forEach(product -> {
+            System.out.println("----------------------------------------");
+            System.out.println(product);
+            System.out.println("----------------------------------------");
+        });
     }
 
     public void createOrder(Scanner scanner) {
-        String customerName = "";
-        do {
-            System.out.println("Enter the customer's name: ");
-            customerName = scanner.nextLine();
-        } while (customerName.trim().isEmpty());
+        String customerName = readNonEmptyString(scanner, "Enter the customer's name: ");
 
         Order order = new Order(customerName);
         orders.put(order.getOrderId(), order);
@@ -151,19 +152,7 @@ public class Store {
     }
 
     public void addItemToOrder(Scanner scanner) {
-        int orderId = 1;
-        do {
-            if (orderId <= 0) {
-                System.out.println("Order ID must be greater than 0.");
-            }
-            System.out.println("Enter the order ID: ");
-            try {
-                orderId = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                orderId = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (orderId <= 0);
+        int orderId = readPositiveInt(scanner, "Enter the order ID: ");
 
         Order order = orders.get(orderId);
         if (order == null) {
@@ -171,37 +160,14 @@ public class Store {
         } else if (order.getStatus() != OrderStatus.PENDING) {
             System.out.println("Order is already " + order.getStatus() + ".");
         } else {
-            int productId = 1;
-            do {
-                if (productId <= 0) {
-                    System.out.println("Product ID must be greater than 0.");
-                }
-                System.out.println("Enter the product ID: ");
-                try {
-                    productId = Integer.parseInt(scanner.nextLine());
-                } catch (NumberFormatException e) {
-                    productId = 0;
-                    System.out.println("Invalid input. Please enter a number.");
-                }
-            } while (productId <= 0);
+            int productId = readPositiveInt(scanner, "Enter the product ID: ");
 
             Product product = productMap.get(productId);
             if (product == null) {
                 System.out.println("Product not found.");
             } else {
-                int quantity = 1;
-                do {
-                    if (quantity <= 0) {
-                        System.out.println("Quantity must be greater than 0.");
-                    }
-                    System.out.println("Enter the quantity: ");
-                    try {
-                        quantity = Integer.parseInt(scanner.nextLine());
-                    } catch (NumberFormatException e) {
-                        quantity = 0;
-                        System.out.println("Invalid input. Please enter a number.");
-                    }
-                } while (quantity <= 0);
+                int quantity = readPositiveInt(scanner, "Enter the quantity");
+
                 if (product.getStockQuantity() < quantity) {
                     System.out.println("Not enough stock.");
                 } else {
@@ -214,19 +180,7 @@ public class Store {
     }
 
     public void removeItemFromOrder(Scanner scanner) {
-        int orderId = 1;
-        do {
-            if (orderId <= 0) {
-                System.out.println("Order ID must be greater than 0.");
-            }
-            System.out.println("Enter the order ID: ");
-            try {
-                orderId = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                orderId = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (orderId <= 0);
+        int orderId = readPositiveInt(scanner, "Enter the order ID: ");
 
         Order order = orders.get(orderId);
         if (order == null) {
@@ -235,19 +189,7 @@ public class Store {
                 System.out.println("Order is already " + order.getStatus() + ".");
         } else {
             order.displayOrder();
-            int itemId = 1;
-            do {
-                if (itemId <= 0) {
-                    System.out.println("Item ID must be greater than 0.");
-                }
-                System.out.println("Enter the item ID: ");
-                try {
-                    itemId = Integer.parseInt(scanner.nextLine());
-                } catch (NumberFormatException e) {
-                    itemId = 0;
-                    System.out.println("Invalid input. Please enter a number.");
-                }
-            } while (itemId <= 0);
+            int itemId = readPositiveInt(scanner, "Enter the item ID: ");
 
             if(!order.getCartItems().containsKey(itemId)) {
                 System.out.println("Item not found.");
@@ -260,19 +202,7 @@ public class Store {
     }
 
     public void displayOrder(Scanner scanner) {
-        int orderId = 1;
-        do {
-            if (orderId <= 0) {
-                System.out.println("Order ID must be greater than 0.");
-            }
-            System.out.println("Enter the order ID: ");
-            try {
-                orderId = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                orderId = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (orderId <= 0);
+        int orderId = readPositiveInt(scanner, "Enter the order ID: ");
 
         Order order = orders.get(orderId);
         if (order == null) {
@@ -283,19 +213,7 @@ public class Store {
     }
 
     public void addOrderToShippingList(Scanner scanner) {
-        int orderId = 1;
-        do {
-            if (orderId <= 0) {
-                System.out.println("Order ID must be greater than 0.");
-            }
-            System.out.println("Enter the order ID: ");
-            try {
-                orderId = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                orderId = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (orderId <= 0);
+        int orderId = readPositiveInt(scanner, "Enter the order ID: ");
 
         Order order = orders.get(orderId);
         if (order == null) {
@@ -323,19 +241,7 @@ public class Store {
     }
 
     public void cancelOrder(Scanner scanner) {
-        int orderId = 1;
-        do {
-            if (orderId <= 0) {
-                System.out.println("Order ID must be greater than 0.");
-            }
-            System.out.println("Enter the order ID: ");
-            try {
-                orderId = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                orderId = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (orderId <= 0);
+        int orderId = readPositiveInt(scanner, "Enter the order ID: ");
 
         Order order = orders.get(orderId);
         if (order == null) {
@@ -352,19 +258,7 @@ public class Store {
     }
 
     public void searchOrderById(Scanner scanner) {
-        int orderId = 1;
-        do {
-            if (orderId <= 0) {
-                System.out.println("Order ID must be greater than 0.");
-            }
-            System.out.println("Enter the order ID: ");
-            try {
-                orderId = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                orderId = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (orderId <= 0);
+        int orderId = readPositiveInt(scanner, "Enter the order ID: ");
 
         Order order = orders.get(orderId);
         if (order == null) {
@@ -375,42 +269,14 @@ public class Store {
     }
 
     public void addReview(Scanner scanner) {
-        int productId = 1;
-        do {
-            if (productId <= 0) {
-                System.out.println("Product ID must be greater than 0.");
-            }
-            System.out.println("Enter product ID: ");
-            try {
-                productId = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                productId = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (productId <= 0);
+        int productId = readPositiveInt(scanner, "Enter the product ID: ");
 
         if(!productMap.containsKey(productId)) {
             System.out.println("Product not found.");
         } else {
-            String customerName = "";
-            do {
-                System.out.println("Enter the customer's name: ");
-                customerName = scanner.nextLine();
-            } while (customerName.trim().isEmpty());
+            String customerName = readNonEmptyString(scanner, "Enter the customer's name: ");
 
-            int starRating = 1;
-            do {
-                if (starRating < 0 || starRating > 5) {
-                    System.out.println("Star rating must be between 0 and 5.");
-                }
-                System.out.println("Enter a star rating: (0-5)");
-                try {
-                    starRating = Integer.parseInt(scanner.nextLine());
-                } catch (NumberFormatException e) {
-                    starRating = -1;
-                    System.out.println("Invalid input. Please enter a number.");
-                }
-            } while (starRating < 0 || starRating > 5);
+            int starRating = readIntBetweenRange(scanner, "Enter the star rating: ", 0, 5);
 
             System.out.println("Enter your comment on the product: ");
             String comment = scanner.nextLine();
@@ -420,26 +286,17 @@ public class Store {
     }
 
     public void displayReviewsForProduct(Scanner scanner) {
-        int productId = 1;
-        do {
-            if (productId <= 0) {
-                System.out.println("Product ID must be greater than 0.");
-            }
-            System.out.println("Enter product ID: ");
-            try {
-                productId = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                productId = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (productId <= 0);
-
-        for (Review review : reviews) {
-            if (review.getProductId() == productId) {
+        int productId = readPositiveInt(scanner, "Enter the product ID: ");
+        List<Review> filtered = reviews.stream().filter(review -> review.productId() == productId).toList();
+        if(filtered.isEmpty()) {
+            System.out.println("No reviews found for product ID " + productId + ".");
+        } else {
+            filtered.forEach(review -> {
+                System.out.println("----------------------------------------");
                 System.out.println(review);
-            }
+                System.out.println("----------------------------------------");
+            });
         }
-        System.out.println("No reviews found for product ID " + productId + ".");
     }
 
     public void removeOutOfStockProducts() {
@@ -454,36 +311,12 @@ public class Store {
     }
 
     public void addStockToProduct(Scanner scanner) {
-        int productId = 1;
-        do {
-            if (productId <= 0) {
-                System.out.println("Product ID must be greater than 0.");
-            }
-            System.out.println("Enter the product's ID: ");
-            try {
-                productId = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                productId = 0;
-                System.out.println("Invalid input. Please enter a number.");
-            }
-        } while (productId <= 0);
+        int productId = readPositiveInt(scanner, "Enter the product ID: ");
 
         if (!productMap.containsKey(productId)) {
             System.out.println("Product not found.");
         } else {
-            int quantity = 1;
-            do {
-                if (quantity <= 0) {
-                    System.out.println("Quantity must be greater than 0.");
-                }
-                System.out.println("Enter the quantity: ");
-                try {
-                    quantity = Integer.parseInt(scanner.nextLine());
-                } catch (NumberFormatException e) {
-                    quantity = 0;
-                    System.out.println("Invalid input. Please enter a number.");
-                }
-            } while (quantity <= 0);
+            int quantity = readPositiveInt(scanner, "Enter the quantity: ");
 
             productMap.get(productId).addStockQuantity(quantity);
             System.out.println("Quantity added successfully.");
@@ -493,12 +326,8 @@ public class Store {
 
     public void displayOrdersOrderedByTotal() {
         List<Order> orders = new ArrayList<>(this.orders.values());
-        orders.sort(Comparator.comparingDouble(Order::getTotal));
-        int index = 1;
-        for (Order order : orders) {
-            System.out.println(index++);
-            order.displayOrder();
-        }
+        orders.sort(Comparator.comparingDouble(Order::calculateTotal));
+        orders.forEach(Order::displayOrder);
     }
 
     public void printMenu() {
@@ -527,21 +356,11 @@ public class Store {
     }
 
     public void run() {
-        int choice = 1;
+        int choice;
         Scanner scanner = new Scanner(System.in);
         do {
             printMenu();
-            do {
-                if (choice < 1 || choice > 20) {
-                    System.out.println("Invalid choice. Please enter a number between 1 and 20.");
-                }
-                try {
-                    choice = Integer.parseInt(scanner.nextLine());
-                } catch (NumberFormatException e) {
-                    choice = 0;
-                    System.out.println("Invalid input. Please enter a number.");
-                }
-            } while (choice < 1 || choice > 20);
+            choice = readIntBetweenRange(scanner, "Enter your choice of service from 1 -> 20: ", 1, 20);
 
             switch (choice) {
                 case 1 -> addProduct(scanner);

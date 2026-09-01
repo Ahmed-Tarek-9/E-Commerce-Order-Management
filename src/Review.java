@@ -1,31 +1,4 @@
-public class Review {
-    private int productId;
-    private String customerName;
-    private int starRating;
-    private String comment;
-
-    public Review(int productId, String customerName, int starRating, String comment) {
-        this.productId = productId;
-        this.customerName = customerName;
-        this.starRating = starRating;
-        this.comment = comment;
-    }
-
-    public int getProductId() {
-        return productId;
-    }
-
-    public String getCustomerName() {
-        return customerName;
-    }
-
-    public int getStarRating() {
-        return starRating;
-    }
-
-    public String getComment() {
-        return comment;
-    }
+public record Review (int productId, String customerName, int starRating, String comment) {
 
     @Override
     public String toString() {

@@ -4,10 +4,9 @@ import java.util.List;
 import java.util.Map;
 
 public class Order {
-    private int orderId;
-    private String customerName;
-    private Map<Integer, CartItem> cartItems;
-    private double total;
+    private final int orderId;
+    private final String customerName;
+    private final Map<Integer, CartItem> cartItems;
     private OrderStatus status;
     private static int nextId = 1;
 
@@ -15,8 +14,7 @@ public class Order {
         this.customerName = customerName;
         orderId = nextId++;
         status = OrderStatus.PENDING;
-        cartItems = new LinkedHashMap<Integer, CartItem>();
-        total = 0.0;
+        cartItems = new LinkedHashMap<>();
     }
 
     public int getOrderId() {
@@ -27,12 +25,8 @@ public class Order {
         return customerName;
     }
 
-    public double getTotal() {
-        return total;
-    }
-
     public Map<Integer, CartItem> getCartItems() {
-        return cartItems;
+        return Map.copyOf(cartItems);
     }
 
     public OrderStatus getStatus() {
@@ -40,30 +34,25 @@ public class Order {
     }
 
     public void addItem(CartItem cartItem) {
-        if (cartItems.containsKey(cartItem.getProduct().getId())) {
-            cartItems.get(cartItem.getProduct().getId()).addQuantity(cartItem.getQuantity());
-        } else {
-            cartItems.put(cartItem.getProduct().getId(), cartItem);
-        }
-        calculateTotal();
+        cartItems.merge(cartItem.getProduct().getId(), cartItem, (existing, incoming) -> {
+            existing.addQuantity(incoming.getQuantity());
+            return existing;
+        });
+
         cartItem.getProduct().removeStockQuantity(cartItem.getQuantity());
     }
 
     public void removeItem(CartItem cartItem) {
         cartItems.remove(cartItem.getProduct().getId());
-        calculateTotal();
         cartItem.getProduct().addStockQuantity(cartItem.getQuantity());
     }
 
     public double calculateTotal() {
-        total = 0.0;
-        for (CartItem cartItem : cartItems.values()) {
-            total += cartItem.getProduct().getPrice() * cartItem.getQuantity();
-        }
-        return total;
+        return cartItems.values().stream().mapToDouble(CartItem::calculateSubtotal).sum();
     }
 
     public void displayOrder() {
+        System.out.println("----------------------------------------");
         System.out.println("Order ID: #" + orderId);
         System.out.println("Customer Name: " + customerName);
         System.out.println("Status: " + status);
@@ -71,7 +60,8 @@ public class Order {
         cartItems.forEach((productId, cartItem) ->
             System.out.println("\tID: " + productId + ", " + cartItem.getProduct().getName() + " x " + cartItem.getQuantity()
                     + " = " + cartItem.getProduct().getPrice() * cartItem.getQuantity()));
-        System.out.println("Total = " + total);
+        System.out.println("Total = " + calculateTotal());
+        System.out.println("----------------------------------------");
     }
 
     public void updateStatus(OrderStatus status) {
